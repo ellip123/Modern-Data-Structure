@@ -1,0 +1,136 @@
+---
+title: "hw03"
+author: "Xiangyu Liu"
+date: '2017-09-29'
+output:
+  html_document: null
+  md_document:
+    variant: markdown_github
+---
+##1
+
+```{r, echo = TRUE}
+##a) Write a loop
+output <- vector("list", 101)
+for (i in 1:(length(output)-1)){
+  output[i] <- paste(100-i,'bottles of beer on the wall,', 100-i, 'bottles of beer. Take one down, pass it around,', 99-i, 'bottles of beer on the wall...')
+}
+output[101]=paste('No more bottles of beer on the wall, no more bottles of beer. Go to the store and buy some more, 99 bottles of beer on the wall..')
+
+print(output[1:5])
+
+##b) Convert loop to a function
+function_song <- function(a=99,liquid='beer',vessel='bottles',surface='wall') {
+  for(i in a:1){
+    print(sprintf("%i %s of %s on the %s, %i %s of %s. Take one down, pass it around, %i %s of %s on the %s...", i, vessel, liquid, surface, i, vessel, liquid, i-1, vessel, liquid, surface))
+  }
+  print(sprintf('No more bottles of beer on the wall, no more bottles of beer. Go to the store and buy some more, %i bottles of beer on the wall..', a))
+}
+```
+
+##2
+
+```{r,echo=TRUE}
+##a) Plot with horizontal lines
+plot(1, type="n", xlab="", ylab="", xlim = c(0, 10), ylim = c(0, 10))
+for (i in 0:10) {
+  lines(x = c(0,10), y = c(i,i))
+}
+
+##b) Add vertical lines
+plot(1, type="n", xlab="", ylab="", xlim = c(0, 10), ylim = c(0, 10))
+for (i in 0:10) {
+  lines(x = c(0,10), y = c(i,i))
+  lines(x = c (i,i), y = c(0,10))
+}
+
+##c) Add points
+plot(1, type="n", xlab="", ylab="", xlim = c(0, 10), ylim = c(0, 10))
+for (i in 0:10) {
+  lines(x = c(0,10), y = c(i,i))
+  lines(x = c (i,i), y = c(0,10))
+  points(x = i, y = i)
+  points(x = i, y = 10-i)
+}
+
+##d) Convert to function
+plot_horizontal <- function(t) {
+  plot(1, type="n", xlab="", ylab="", xlim = c(0, t), ylim = c(0, t))
+for (i in 0:t) {
+  lines(x = c(0,t), y = c(i,i))
+}
+}
+
+plot_vertical <- function(t) {
+  plot(1, type="n", xlab="", ylab="", xlim = c(0, t), ylim = c(0, t))
+for (i in 0:t) {
+  lines(x = c(i,i), y = c(0,t))
+}
+}
+
+plot_points <- function(t) {
+  plot(1, type="n", xlab="", ylab="", xlim = c(0, t), ylim = c(0, t))
+for (i in 0:t) {
+  points(x = i, y = i)
+  points(x = i, y = t-i)
+}
+}
+
+plot_all <- function(t, fun ='') {
+  if (fun == 'horizontal'){
+    plot_horizontal(t)
+  } else if (fun == 'vertical'){
+    plot_vertical(t) 
+  } else if (fun == 'points'){
+    plot_points(t)
+  } else {
+    print('wrong')
+  }
+}
+
+
+```
+
+##3
+
+```{r}
+##a) Calculate min and max
+desc_stats <- function(x = c()){
+  min = min(x,na.rm=TRUE)
+  max = max(x,na.rm=TRUE)
+  print(paste('the min is', min, ',the max is', max))
+}
+
+##b) Add the median
+desc_stats <- function(x=c(),median=FALSE){
+  min = min(x,na.rm=TRUE)
+  max = max(x,na.rm=TRUE)
+  print(paste('the min is', min, ',the max is', max))
+  if (median == TRUE){
+    median = round(median(x,na.rm=TRUE),digits=2)
+    print(paste('the median is', median))
+    }
+}
+
+##c) Add error checks
+desc_stats <- function(x=c(),median=FALSE){
+  if (is.null(x)) return('wrong')
+  else if (length(x) == sum(is.na(x))) return('wrong')
+  else{
+      min = min(x,na.rm=TRUE)
+      max = max(x,na.rm=TRUE)
+      print(paste('the min is', min, ',the max is', max))
+      if (median == TRUE){
+        median = round(median(x,na.rm=TRUE),digits=2)
+        print(paste('the median is', median))
+      }
+  }
+}
+
+
+##TEST
+desc_stats(x=c(12,23,NA),median=TRUE)
+
+```
+
+
