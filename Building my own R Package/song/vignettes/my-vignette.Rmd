@@ -1,0 +1,24 @@
+---
+title: "The SONG Package Explained"
+author: "Xiangyu Liu"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, echo=FALSE, out.width = "100%"}
+
+```
+
+The `song` package contains one functions: `function_song()` 
+
+## `function_song` Function
+This `function_song` function prints a reverse song. The liquid, vessels and surface can be created seperately.
+
+```{r eval=FALSE}
+library(song)
+function_song()
+```
