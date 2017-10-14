@@ -1,0 +1,59 @@
+---
+title: "hw02"
+author: "Xiangyu Liu"
+date: '2017-09-22'
+output:
+  md_document:
+    variant: markdown_github
+  html_document: null
+---
+##Selection of Data and Tidying
+```{r}
+library(readr)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+rawData <- read_csv('U.S._Chronic_Disease_Indicators__CDI_.csv', na='NA')
+
+cleanData <- rawData %>% filter((Question == "Binge drinking prevalence among adults aged >= 18 years"| Question =='Poverty')& DataValueType == 'Crude Prevalence' & DataValueUnit == '%') 
+
+a <- filter(cleanData, StratificationCategoryID1 == 'GENDER'|StratificationCategoryID1 == 'OVERALL')
+
+b <- select(a, YearStart, YearEnd, LocationAbbr, LocationDesc, Question, DataValue, Stratification1)
+
+C <- b %>% unite(new, Question, Stratification1)
+
+d <- spread(C, key=new, value=DataValue)
+
+binge_clean <- d %>% select(state= LocationDesc, stateabb=LocationAbbr, year=YearStart, binge_all='Binge drinking prevalence among adults aged >= 18 years_Overall', binge_male='Binge drinking prevalence among adults aged >= 18 years_Male', binge_female='Binge drinking prevalence among adults aged >= 18 years_Female' ,poverty= Poverty_Overall)
+write.csv(binge_clean, "binge_clean.csv")
+```
+
+##Data Transformation and Summary Results
+
+```{r}
+e <- binge_clean %>% filter(year==2015) %>% select(year, state, binge_all, binge_female, binge_male) %>% arrange(desc(binge_all))
+f <- e %>% filter(state == 'District of Columbia'|state == 'North Dakota'|state == 'Wisconsin'|state == 'Guam'|state == 'Alaska'|state == 'Illinois'|state == 'Iowa'|state == 'Montana'|state == 'Minnesota'|state == 'Nebraska')
+tbl_df(f)
+
+```
+```{r}
+ggplot(binge_clean,aes(x=binge_all,y=poverty))+geom_point()+geom_smooth(method='loess')
+```
+
+Comment: when the the prevalence of binge drinking in the overall population is less than 12%, the overall poverty prevalence grows with overall poverty prevalence; when the the prevalence of binge drinking in the overall population is more than 12%, the overall poverty prevalence keeps almost the same.
+
+```{r}
+dataByState <- binge_clean %>% 
+  group_by(state) %>%
+  summarise(avgGrowth = (last(binge_all) - first(binge_all)) / (n() * first(binge_all))) %>% 
+  arrange(avgGrowth)
+
+dataByState2 <- na.omit(dataByState)
+
+dataByState2 %>% head(5)
+dataByState2 %>% tail(5)
+AnnualGrowthTable<-data.frame(states_with_the_largest_increases= c('Guam','District of Columbia','Louisiana','West Virginia','Tennessee'), states_with_the_largest_decreases=c("Delaware","Nevada","South Dakota",'New Mexico','Maryland'))
+AnnualGrowthTable
+```
+
