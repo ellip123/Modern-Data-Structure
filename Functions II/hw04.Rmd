@@ -1,0 +1,134 @@
+---
+title: "hw03"
+author: "Xiangyu Liu"
+date: "2017-10-7"
+output:
+  md_document:
+    variant: markdown_github
+  html_document: null
+---
+##1. Functions in the R Base Package
+```{r}
+content <- mget(ls("package:base"), inherits = TRUE)
+base_functions <- Filter(is.function, content)
+library(purrr)
+library(dplyr)
+##a) Longest name
+names <- map(names(base_functions), ~ .)  
+length<- map(names,~nchar(.))%>% as.integer()
+longest_name <- names[length==max(length)]
+longest_name
+```
+The funtion 'getDLLRegisteredRoutines.character' has the longest name. 
+
+```{r}
+##b) Number of arguments
+narg <- map(base_functions,~formals(.)) %>% lengths
+top10=narg[order(narg,decreasing=TRUE)[1:10]]
+list=list(name=names(top10),length=top10)
+tbl_df(list)
+```
+
+```{r}
+##c) No arguments
+map(base_functions,~formals(.))[narg==0] %>% names %>% length
+```
+
+226 base functions have no arguments. They are primitive functions. The advantage of primitive functions is the potential efficiency of argument passing.
+
+##2. Infant Mortality and GPD per Capita
+```{r}
+##a) Highest and lowest infant mortality rates in 2015
+library(WDI)
+
+
+data <- WDI(indicator=c("NY.GDP.PCAP.PP.KD","SP.DYN.IMRT.IN"), start=1960, end=2016, extra=TRUE) %>% rename(gdpcap= NY.GDP.PCAP.PP.KD, infmort=SP.DYN.IMRT.IN) %>% filter(!region=='Aggregates') ##keep only entries for countries
+
+
+list <- filter(data, year =='2015')
+list <- list[with(list,order(-infmort)),] %>% filter(!is.na(infmort))
+
+selected_countries <- rbind(head(list,5),tail(list,5))
+selected_countries <- selected_countries[,c(2,4,5)]
+selected_countries
+```
+```{r}
+##b) Overall regression
+library(ggplot2)
+lm(formula = infmort ~ gdpcap, data = data)
+ggplot(data,aes(gdpcap,infmort)) + geom_point()+geom_smooth(na.rm=TRUE)
+```
+The infant mortality is inversely proportional to GDP per capita.#####
+```{r}
+##c) Regression by region
+regiondata <- data %>% 
+  filter(!is.na(region)) %>% 
+  filter(!is.na(infmort))%>% 
+  filter(!is.na(gdpcap)) %>%
+  filter(region !='Aggregates')%>%
+  select(infmort,gdpcap,region)
+
+regionlist <- split(regiondata, regiondata$region)
+
+coefs_region <- regionlist[2:8]%>%
+  map(~ lm(infmort ~ gdpcap, data = .))%>%
+  map(~ coef(.)) %>%
+  map_dbl("gdpcap") %>%
+  sort%>%
+  as.data.frame()
+
+coefs_region
+```
+
+
+```{r}
+##d) Regression by country
+countrydata <- data %>% 
+  select(infmort,gdpcap,country)%>% 
+  filter(!is.na(country)) %>% 
+  filter(!is.na(infmort))%>% 
+  filter(!is.na(gdpcap))
+
+countrylist <- split(countrydata, countrydata$country)
+
+coefs_country <- countrydata %>% 
+  split(countrydata$country) %>%
+  map(~ lm(infmort ~ gdpcap, data = .))%>%
+  map(~ coef(.)) %>%
+  map_dbl("gdpcap") %>%
+  sort%>%
+  as.data.frame()
+
+count(coefs_country,coefs_country>0)
+
+18/184
+```
+The percentage is 18/184.
+
+```{r}
+walk(coefs_country, hist)%>%
+  map(summary)
+head(coefs_country,1)
+tail(coefs_country,1)
+```
+The country with the smallest coefficient is Guinea. Its  coefficient is -0.3521231. The country with the biggest coefficient is Madagascar. Its coefficient is 0.1300038. Because the overall regression estimated coefficient is -0.001005 . Therefore, Guinea cases are most at odds with the overall regression estimated in part(b).
+```{r}
+##e) Added squared term
+rsquared_without_added<- countrydata %>% 
+  split(countrydata$country) %>%
+  map(~ lm(infmort ~ gdpcap, data = .)) %>%
+  map(summary) %>%
+  map_dbl("adj.r.squared")
+
+countrydata$gdpcap2 <- countrydata$gdpcap * countrydata$gdpcap
+
+rsquared_with_added<- countrydata %>% 
+  split(countrydata$country) %>%
+  map(~ lm(infmort ~ gdpcap+gdpcap2, data = .)) %>%
+  map(summary) %>%
+  map_dbl('adj.r.squared')
+
+summary(rsquared_with_added)
+summary(rsquared_without_added)
+```
+The average of adjusted R-squared with squared term is 0.74059. The average of adjusted R-squared without squared term is 0.66792. Because the average of adjusted R-squared with squared term is higher. So I recommend to keep the squared term.
