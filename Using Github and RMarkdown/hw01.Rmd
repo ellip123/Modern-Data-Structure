@@ -1,0 +1,55 @@
+---
+title: "hw01"
+author: "Xiangyu Liu"
+date: '2017-09-14'
+output:
+  pdf_document: default
+  md_document:
+    variant: markdown_github
+  html_document: null
+---
+##Get some data
+
+```{r}
+devtools::install_github("rudeboybert/fivethirtyeight")
+library(fivethirtyeight)
+data(package = "fivethirtyeight")
+?airline_safety
+```
+I choose the dataset called 'airline_safety', which is to show whether travelers should avoid flying airlines that have had crashed in the past. This dataset has 56 rows representing airlines and 9 variables. Here is the link to the article.[more info](http://fivethirtyeight.com/features/should-travelers-avoid-flying-airlines-that-have-had-crashes-in-the-past/.)
+
+```{r a small table}
+NameAndDescription<-data.frame(Variable_Name=c('airline','incl_reg_subsidiaries','avail_seat_km_per_week','incidents_85_99'),Variable_Description=c("airline","indicates that regional subsidiaries are included","available seat kilometers flown every week",'Total number of incidents, 1985-1999'))
+NameAndDescription
+```
+
+##Show the data
+```{r,echo=FALSE}
+summary(airline_safety)
+library(DT)
+datatable(airline_safety)
+library(knitr)
+?kable
+?airline_safety
+library(reshape)
+renamed<-rename(airline_safety,c(incl_reg_subsidiaries='reg_sub',avail_seat_km_per_week='avail_seat'))
+kable(subset(renamed,reg_sub == 'TRUE'))
+  
+```
+
+##Add some Latex formulas
+You can convert the fatal accidents number from 1985-1999 to 2000-2014 with this formula
+$$ fatal accidents 85 99 = fatal accidents 00 14 - 10 $$
+
+##Add a plot
+```{r}
+library(ggplot2)
+?ggplot2
+plot(airline_safety$fatal_accidents_85_99, airline_safety$fatalities_85_99,main='Fatal accicents and facilities in 1985-1999',xlab='fatal accidents in 1985-1999',ylab='facilities in 1985-19999')
+```
+
+##Add a picture
+
+![](http://cdn-image.travelandleisure.com/sites/default/files/styles/1600x1000/public/wackiest-airplanes-plane1215.jpg?itok=XpmhZDq8)
+
+
