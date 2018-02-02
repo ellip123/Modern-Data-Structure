@@ -1,0 +1,94 @@
+---
+title: "hw08"
+author: "Xiangyu Liu"
+date: "2017-11-5"
+output:
+  html_document: null
+  md_document:
+    variant: markdown_github
+  word_document: default
+---
+
+##1. Choose an API
+```{r}
+##a)I choose the Enigma API. Data is available in JSON, XML, or HTML format. Enigma API provides thousands of various public data sources. For example, Nike, Inc. - Global Manufacturing Contracts data includes key information such as names and locations of factories, contact information and types of products manufactured. 
+##b)API documentation: http://docs.enigma.com/public/public_v20_api_about.html
+##c)the base URL of the API:https://public.enigma.com/api/datasets/
+```
+
+##2. Authentication
+```{r}
+##a)
+##To get access to Enigma API we need an API key to authenticate ourselves. And we need to pass the authentication information in the HEADER of the request.
+
+##b) 
+##To obtain an Enigma API, we need to create an Enigma Public account on https://public.enigma.com/.
+##my API key is: iI66iSCeR02h4lRvKD87DTYXRMjaTlyJPNpKFaj2ScqLCz29Yifb6. Then I put it in my .Renviron file.
+
+```
+
+##3. Send a Simple GET request
+```{r}
+##a) 
+library(httr)
+baseurl_data <- "https://public.enigma.com/api/datasets"
+key <- Sys.getenv("ENIGMA_KEY")
+##I am using the dataset'Nike, Inc. - Global Manufacturing Contracts“
+dataID <- "130ff187-815a-45d4-bf4a-27e332432f05" 
+querypar <- list(query=list("Product Type"="APPAREL"),row_limit=150, row_offset=10)
+url = paste(baseurl_data, "/", dataID, "?", sep="")
+r <- GET(url = paste(baseurl_data, "/", dataID, "?", sep=""),
+         query=querypar,
+         add_headers(Authorization = paste("Bearer",key)))
+r
+##b) Check of the status of the request
+http_status(r)
+##c) Check the type of the response
+http_type(r)
+
+
+```
+##4. Parse the response and Create a dataset
+```{r}
+##a)
+library(jsonlite)
+library(dplyr)
+df <- fromJSON(content(r, as = "text"))
+df<-df$current_snapshot$table_rows$rows
+df<-df%>%as.data.frame()
+
+##b)
+
+##choose some interesting features
+df<-filter(df, V3 == "NIKE")
+
+##c)
+summary(df)
+saveRDS(df,"data.rds")
+```
+##5. API Client
+```{r}
+##a)
+myfunction <- function(row_limit=200, row_offset=5 ){
+  baseurl_data <- "https://public.enigma.com/api/datasets"
+  key <- Sys.getenv("ENIGMA_KEY")
+  dataID <- "130ff187-815a-45d4-bf4a-27e332432f05" 
+  querypar <- list(query=list("Product Type"="APPAREL"),row_limit=row_limit, row_offset=row_offset)
+  r <- GET(url = paste(baseurl_data, "/", dataID, "?", sep=""),
+         query=querypar,
+         add_headers(Authorization = paste("Bearer",key)))
+  ## inform the user of any errors
+  print(http_status(r))
+  ##parse the response and return a R object 
+  df <- fromJSON(content(r, as = "text"))
+  df<-df$current_snapshot$table_rows$rows
+  df<-df%>%as.data.frame()
+  return(df)
+}
+
+##b)save the default output object
+default<-myfunction( )
+saveRDS(default,"api_client_output.RDS")
+
+```
+

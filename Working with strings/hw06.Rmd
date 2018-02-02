@@ -1,0 +1,192 @@
+---
+title: "hw06"
+author: "Xiangyu Liu"
+date: '2017-10-21'
+output:
+  md_document:
+    variant: markdown_github
+  html_document: null
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+## Please don't show this code or output in your homework
+# Install and load the package `gutenbergr`. 
+library(gutenbergr)
+# Let's get the book "Ulysses" by James Joyce
+gutenberg_works(author == "Joyce, James")
+book <- gutenberg_download(4300)
+book
+
+# Install and load the package `tidytext`. 
+library(tidytext)
+# Now let's get the words in the text
+library(dplyr)
+words <- book %>%
+  unnest_tokens(word, text)
+words
+```
+## 1. Words in Ulysses
+## a) Words with z
+```{r}
+library(stringr)
+data <- words$word
+number_as <- str_count(data, "z")
+table(number_as)
+
+##909 words contain one z, 81 words contain two z's, one word contain 3 z's.
+wordswithz <- c(data[number_as==2],data[number_as==3])
+twoz<-c(data[number_as==2])
+threez<-c(data[number_as==3])
+
+z2<- str_split(twoz,'z',simplify = TRUE)%>%as.data.frame()
+str_length(z2$V2)
+z3<- str_split(threez,'z',simplify = TRUE)%>%as.data.frame()
+str_length(z3$V2)
+str_length(z3$V3)
+
+##This word is "százharminczbrojúgulyás"
+```
+
+##b) Vowels
+```{r}
+library(rebus)
+vowels <- char_class("aeiouAEIOU")
+length(str_subset(data, pattern = "^[aeiouAEIOU]")%>%str_subset(pattern="[aeiouAEIOU]$"))
+## 14458 words start and end with a vowel
+length(str_subset(data, pattern = "^[aeiouAEIOU]")%>%str_subset(pattern="^.[aeiouAEIOU]"))
+##2581 words start with two or more vowels
+```
+```{r}
+str_subset(data, regex(vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels))
+
+str_subset(data, regex(vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels,vowels))
+
+## There are at most consecutive 20 vowels in a word. This word is "frseeeeeeeeeeeeeeeeeeeefrong".
+
+```
+
+##c) English spelling
+```{r}
+pattern="[^c]+[i]+[e]"
+str_subset(data,pattern)
+```
+ 
+##2. Emergency Hospital Injuries
+##a) Length of Narratives
+ 
+```{r}
+library(readr)
+library(knitr)
+
+getwd()
+
+opts_chunk$set(root.dir = "/Users/xiangyu")
+emergency <- read_csv("/Users/xiangyu/Documents/GitHub/Course_Material/Exercises/hw06/emergency.csv",col_names = FALSE)
+nchar <- nchar(emergency$X1)
+max(nchar)
+##The longest description
+emergency$X1[nchar==max(nchar)]
+
+##The shortest discription 
+emergency$X1[nchar==min(nchar)]
+
+```
+
+##b) Fractures
+```{r}
+fractures <- ("(FRACTURE|FRACTURES|FRACTURING|FRACTURED)")
+str_subset(emergency$X1, pattern = fractures)
+length(str_subset(emergency$X1, pattern = fractures))
+
+##I can find 524 fracture narratives.
+```
+
+##c) Body Parts
+```{r}
+fracturenarratives <- str_subset(emergency$X1, pattern = fractures)
+
+str_subset(fracturenarratives,'HAND') 
+str_subset(fracturenarratives,'ELBOW') 
+str_subset(fracturenarratives,'RIP') 
+str_subset(fracturenarratives,'ARM') 
+str_subset(fracturenarratives,'HIP') 
+str_subset(fracturenarratives,'LEG') 
+str_subset(fracturenarratives,'WRIST') 
+str_subset(fracturenarratives,'HUMERUS') 
+str_subset(fracturenarratives,'ANKLE') 
+str_subset(fracturenarratives,'TOE') 
+str_subset(fracturenarratives,'SACRAL') 
+str_subset(fracturenarratives,'SHOULDER') 
+str_subset(fracturenarratives,'MANDIBLE') 
+str_subset(fracturenarratives,'BONE') 
+str_subset(fracturenarratives,'FOOT') 
+str_subset(fracturenarratives,'FINGER') 
+str_subset(fracturenarratives,'THUMB')
+str_subset(fracturenarratives,'FACE') 
+bodyparts <- str_extract(fracturenarratives,'(HAND|ELBOW|RIP|ARM|HIP|LEG|WRIST|HUMEROUS|ANKLE|TOE|SACRAL|SHOULDER|MANDIBLE|BONE|FOOT|FINGER|THUMB|FACE)')
+bodyparts <- c(na.omit(bodyparts))
+
+library(ggplot2)
+bodyparts<-data.frame(bodyparts)
+ggplot(bodyparts,aes(x=bodyparts))+
+  geom_bar()
+
+
+
+```
+##d) Age and Gender
+
+```{r}
+ageandgender <- str_extract(emergency$X1, pattern ='(\\d\\d.{0,1}(YO|MO|Y|M|MONTH OLD|Y/O|YR|YR OLD|MO OLD).{0,1}(F|M)|\\d.{0,1}(YO|MO|Y|M|MONTH OLD|Y/O|YR|YR OLD|MO OLD).{0,1}(F|M))')
+ageandgender <- data.frame(ageandgender)
+age <- str_match(ageandgender$ageandgender,'(\\d\\d|\\d)')
+age<-data.frame(age)
+
+unit<- str_match(ageandgender$ageandgender,'((YO|MO|Y|M|MONTH OLD|Y/O|YR|YR OLD|MO OLD))')
+unit<-data.frame(unit)
+
+gender <- str_match(ageandgender$ageandgender,'(F|M)$')
+gender<-data.frame(gender)
+
+ageandgender$age <- age$X1
+ageandgender$unit <- unit$X1
+ageandgender$gender <- gender$X1
+ageandgender<-data.frame(ageandgender)
+
+female<-filter(ageandgender,gender=='F')
+male<-filter(ageandgender,gender=='M')
+
+
+## Now we have a data frame inculding age, unit and gender. Then  convert months to years.
+
+month<-filter(ageandgender,unit=="MO"|unit=="M"|unit=="MONTH OLD"|unit=="MO OLD")
+
+month$trans <- 12
+
+month <- transform(month, age2 = as.numeric(age) / as.numeric(trans))
+                   
+month <- subset(month, select = -trans)
+month$age <- month$age2
+month<-subset(month,select=-age2)
+
+year <-filter(ageandgender,unit=="YO"|unit=="Y"|unit=="Y/O"|unit=="YR"|unit=="YR OLD")
+
+total <- rbind(month,year)
+
+sum(total$gender=='M')
+##The number of male is 4639.
+
+sum(total$gender=='F')
+##The number of female is 3633.
+
+##round the age
+total$ageinteger <- round(as.numeric(total$age))
+##draw the line graph
+ggplot(data=total,aes(x=ageinteger))+
+  xlim(0,100)+
+  geom_freqpoly(binwidth=2,aes(linetype=gender))+
+  labs(x = "age",y='number of injuries')
+```
+
+

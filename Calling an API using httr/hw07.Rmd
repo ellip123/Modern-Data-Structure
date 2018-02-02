@@ -1,0 +1,90 @@
+---
+title: "hw07"
+author: "Xiangyu Liu"
+date: '2017-10-26'
+output:
+  html_document: null
+  md_document:
+    variant: markdown_github
+  word_document: default
+---
+
+```{r}
+##1.Define the base URL
+endpoint<-"https://data.lacity.org/resource/7fvc-faax.csv"
+
+##3.Send a simple GET request
+library(httr)
+get_result<-GET(endpoint,max.level=1)
+get_result
+
+##4.Get the content of the response
+content<-content(get_result)
+str(content)
+## the dimensions of the data frame
+library(dplyr)
+dimensions<-names(content) %>% as.data.frame()
+dimensions
+##the areas of the observations included.
+table<-as.data.frame(table(content$area_name))
+table
+##5.Get your access token 
+R.home(component = "home")
+
+query_params <- list("$limit" = "10000","$$app_token" = Sys.getenv("LACRIME_APP_TOKEN"))
+query_params
+parameter_response <-
+  GET(endpoint, 
+      query = query_params)
+parameter_response
+##the status of the server response.
+parameter_response$status_code
+
+##6.Limiting your query
+query_params_limit <- list("$limit" = "10000","$$app_token" = Sys.getenv("LACRIME_APP_TOKEN"),time_occ="2300",date_occ="2010-01-22T00:00:00.000")
+query_params_limit
+parameter_response_limit <-
+  GET(endpoint, 
+      query = query_params_limit)
+parameter_response_limit
+##the status of the server response
+parameter_response_limit$status_code
+
+##My query is selecting the crimes of which the time occured is 2300 and the date occured is 2010-01-22T00:00:00.000.
+
+##7.Locations
+content<-content(parameter_response)
+##get the latitudes and longitudes
+library(stringr)
+split<-str_split_fixed(content$location_1,"POINT",2) %>% as.data.frame()
+split1<-str_split_fixed(split$V2,"\\(",2)%>%as.data.frame()
+split2<-str_split_fixed(split1$V2,"\\)",2)%>%as.data.frame()
+split3<-str_split_fixed(split2$V1,"\\s",2)%>%as.data.frame()
+
+value=c(1:50)
+
+key<-"AIzaSyBBh_Htmzlu4fEOnTk_pNISI9IlsMzOwO8"
+
+##write the for loop
+
+for (i in value){
+  lat=split3$V1[i]
+  long=split3$V2[i]
+  location_url <-paste("https://maps.googleapis.com/maps/api/geocode/json?latlng=",long,',',lat,'&key=',key,sep='')
+  request_result <- GET(location_url)
+  if(http_error(request_result)){
+    warning("The request produced an error.")
+  } else {
+    content1<-content(request_result)
+    content2<-content1$results%>%as.data.frame()
+    print(content2$formatted_address)
+  }
+  Sys.sleep(0.1)
+}
+
+
+
+
+
+```
+

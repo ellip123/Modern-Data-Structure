@@ -1,0 +1,153 @@
+---
+title: "hw08"
+author: "Xiangyu Liu"
+date: '2017-11-10'
+output:
+  html_document: null
+  md_document:
+    variant: markdown_github
+  word_document: default
+---
+##1. Get HTML
+```{r}
+library(rvest)
+library(xml2)
+library(httr)
+url <- "https://en.wikipedia.org/wiki/Mitch_McConnell#cite_note-Stretch-22"
+sof <- read_html(url)
+sof
+```
+##2. Get the info box
+```{r}
+##a)We want to select the CSS tag .vcard.
+##b) Extract the part of the HTML document that contains the infobox using the CSS information.
+info_box <-html_nodes(sof, ".vcard")
+info_box
+```
+##3. Make a data frame
+```{r}
+##a)
+table<-info_box%>%html_table(fill=TRUE)%>%as.data.frame()
+d <- table
+names <- colnames(d)
+names[2]<-names[1]
+table <- rbind(names,d)
+
+
+##b)
+colnames(table) <- c("key","value")
+
+
+##c)
+table$key[1]<-'Full name'
+selected<-table[which(table$key=='Full name' |table$key=='Political party'|table$key=='Children') ,]
+library(magrittr)
+
+selected$key %<>% factor
+selected$value %<>% factor
+row.names(selected)<-c()
+selected
+```
+##4. Make a function
+```{r}
+##a)
+myfunction <- function(url="https://en.wikipedia.org/wiki/Mitch_McConnell#cite_note-Stretch-22"){
+  sof <- read_html(url)
+  info_box <-html_nodes(sof, ".vcard")
+  info_box<-info_box[1]
+  table<-info_box%>%html_table(fill=TRUE)%>%as.data.frame()
+  d <- table
+  names <- colnames(d)
+  names[2]<-names[1]
+  table <- rbind(names,d)
+  colnames(table) <- c("key","value")
+  table$key[1]<-'Full name'
+  selected<-table[which(table$key=='Full name'|table$key=='Political party'|table$key=='Children') ,]
+  selected$key %<>% factor
+  selected$value %<>% factor
+  row.names(selected)<-c()
+  return(selected)
+}
+
+
+##b)
+get_wiki_info <- function(url="https://en.wikipedia.org/wiki/Mitch_McConnell#cite_note-Stretch-22"){
+  sof <- read_html(url)
+  info_box <-html_nodes(sof, ".vcard")
+  info_box<-info_box[1]
+  table<-info_box%>%html_table(fill=TRUE)%>%as.data.frame()
+  d <- table
+  names <- colnames(d)
+  names[2]<-names[1]
+  table <- rbind(names,d)
+  colnames(table) <- c("key","value")
+  table$key[1]<-'Full name'
+  selected<-table[which(table$key=='Full name'|table$key=='Political party'|table$key=='Children') ,]
+  if ('Children' %in% selected$key == FALSE){
+  children<-data.frame("Children","NA")
+  names(children)<-c("key","value")
+  selected<-rbind(selected,children)
+  }
+  selected$key %<>% factor
+  selected$value %<>% factor
+  row.names(selected)<-c()
+  return(selected)
+}
+
+get_wiki_info("https://en.wikipedia.org/wiki/Jeff_Flake")
+
+get_wiki_info("https://en.wikipedia.org/wiki/Susan_Collins")
+
+```
+##5. Get all senators' pages
+```{r}
+##a)
+members_url <- "https://en.wikipedia.org/wiki/Current_members_of_the_United_States_Senate"
+
+members<-read_html(members_url)
+
+members_nodes <- html_nodes( members,".vcard")
+
+attr<-members_nodes%>%html_nodes("a")%>%html_attr("href")
+
+i=1
+while (i < 101){
+  attr[i]<- paste("https://en.wikipedia.org",attr[i],sep="")
+  i=i+1
+}
+urls<-attr
+urls
+head(urls)
+
+##b)
+
+children=c("")
+political_party=c("")
+name=c("")
+i=1
+while (i < 101){
+  table<-get_wiki_info(urls[i])
+  children[i]<-table[3,"value"]%>%as.character()
+  political_party[i]<-table[2,"value"]%>%as.character()
+  name[i]<-table[1,"value"]%>%as.character()
+  i=i+1
+}
+information<-cbind(name,political_party,children)%>%as.data.frame()
+colnames(information)<-c("Full name","Political party","Children")
+information
+
+##c)
+library(stringr)
+
+number<-str_extract_all(information$Children, '[0-9]+')
+typeof(number)
+
+c<-str_match(children,"[0-9]+")
+c<-c[!is.na(c)]%>%as.numeric()
+mean(c)
+```
+```{r}
+summary(information$`Political party`)
+```
+
+##There are 46 members of Democratic , 52 members of Republican,and 2 members of Independent. So 46% of all senators are of Democratic, 52% of all senators are of Republican, 2% of all senators are of Independent. 

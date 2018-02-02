@@ -1,0 +1,104 @@
+---
+title: "hw10"
+author: "Xiangyu Liu"
+date: '2017-11-17'
+output:
+  md_document:
+    variant: markdown_github
+  html_document: null
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Read necessary libraries
+library(DBI)
+```
+```{r, echo=TRUE}
+library(DBI)
+# Connection
+witch_con <- dbConnect(RMySQL::MySQL(),
+      dbname = "witchcraft",
+      host = "tbrambor.cqejfaflibld.us-east-2.rds.amazonaws.com",
+      port = 3306,
+      user = "student",
+      password = "mds-is-fun")
+```
+##1. Getting to know the data
+```{sql, connection="witch_con"}
+#a) 
+SHOW TABLES;
+```
+```{sql, connection="witch_con"}
+#b) 
+DESCRIBE accused
+```
+
+```{sql, connection="witch_con"}
+#c)
+select COUNT(*)
+from accused;
+```
+```{sql, connection="witch_con"}
+#d) 
+Select firstname, sex, age
+from accused
+limit 5
+
+```
+```{sql, connection="witch_con"}
+#e) 
+Select count(age)
+from accused
+where age <> 0
+```
+```{sql, connection="witch_con"}
+#f) 
+Select DISTINCT occupation
+from accused
+```
+##2. Seeing the Devil
+```{sql, connection="witch_con"}
+#a) 
+Select DISTINCT devil_type
+from devilappearance
+```
+```{sql, connection="witch_con"}
+#b) 
+Select count(devil_text)
+from devilappearance
+where devil_text like '%black%'
+```
+
+```{sql, connection="witch_con"}
+#c) 
+Select count(devil_type)/ (select count(devil_type) from devilappearance)
+from devilappearance
+where devil_type = 'Male'
+
+```
+##3. The trial
+```{sql, connection="witch_con"}
+#a) 
+Select max(female_accusers),avg(female_accusers),max(male_accusers),avg(male_accusers)
+from trial
+```
+```{sql, connection="witch_con"}
+#b) 
+Select DISTINCT sentence AS "sentence type", count(sentence) AS "number of sentence"
+from trial
+WHERE sentence != ""
+group by sentence
+order by count(sentence) DESC
+```
+```{sql, connection="witch_con"}
+#c)
+Select verdict,AVG(female_accusers+male_accusers) AS "average number of accusers"
+from trial
+WHERE  verdict!= ""
+group by verdict
+order by AVG(female_accusers+male_accusers) DESC
+
+```
+
