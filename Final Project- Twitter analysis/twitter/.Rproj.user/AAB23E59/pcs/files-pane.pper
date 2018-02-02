@@ -1,9 +1,0 @@
-{
-    "path" : "~/twitter",
-    "sortOrder" : [
-        {
-            "ascending" : true,
-            "columnIndex" : 2
-        }
-    ]
-}
